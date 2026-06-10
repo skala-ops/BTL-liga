@@ -319,10 +319,20 @@ function parseFile(wb) {
   const raw = XLSX.utils.sheet_to_json(ws, { header: 1, defval: null });
   const get = (r, c) => { const row = raw[r]; return row ? (row[c] ?? null) : null; };
 
-  // Find header row (contains "Jméno")
+  // Find header row (contains "Jméno" anywhere in the row)
   let hi = -1;
+  let jmenoCol = 1; // default col index for player names
   for (let i = 0; i < raw.length; i++) {
-    if (raw[i] && raw[i][1] === 'Jméno') { hi = i; break; }
+    if (!raw[i]) continue;
+    for (let ci = 0; ci < raw[i].length; ci++) {
+      const v = raw[i][ci];
+      if (v != null && String(v).trim().toLowerCase() === 'jméno') {
+        hi = i;
+        jmenoCol = ci;
+        break;
+      }
+    }
+    if (hi >= 0) break;
   }
   if (hi < 0) return null;
 
@@ -330,7 +340,7 @@ function parseFile(wb) {
   const SKIP = new Set(['jméno', 'zápasy', 'body', 'sety', 'skóre', '', 'null', 'undefined']);
   const opps = [];
   headerRow.forEach((v, ci) => {
-    if (ci < 2) return;
+    if (ci <= jmenoCol) return;
     const label = v != null ? String(v).trim() : '';
     if (!label || SKIP.has(label.toLowerCase())) return;
     opps.push({ name: label, col: ci });
@@ -338,7 +348,7 @@ function parseFile(wb) {
 
   const players = [];
   for (let i = hi + 1; i < raw.length; i++) {
-    const name = get(i, 1);
+    const name = get(i, jmenoCol);
     if (!name || String(name).trim() === '') break;
     players.push({ name: String(name).trim(), ri: i });
   }
@@ -461,7 +471,10 @@ function handleFile(e) {
       const wb = XLSX.read(ev.target.result, { type: 'binary' });
       const data = parseFile(wb);
       if (data) render(data);
-      else alert('Soubor se nepodařilo načíst. Zkontroluj, že obsahuje správnou strukturu s řádkem „Jméno".');
+      else {
+        const sheetNames = wb.SheetNames.join(', ');
+        alert(`Soubor se nepodařilo načíst.\n\nNalezené listy: ${sheetNames}\n\nZkontroluj, že první list obsahuje řádek s buňkou „Jméno" ve sloupci B.`);
+      }
     } catch (err) {
       alert('Chyba při čtení souboru: ' + err.message);
     }
