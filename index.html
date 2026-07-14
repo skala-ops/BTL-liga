@@ -383,18 +383,32 @@ function parseFile(wb) {
         let sc = `${g1w}:${g1l}`;
         if (g2w || g2l) sc += ` ${g2w}:${g2l}`;
         if (sbw || sbl) sc += ` (${sbw}:${sbl})`;
+        // setsLabel vždy z pohledu vítěze (p1 může být poražený)
+        const p1wins = sP > sO;
+        const setsWon = p1wins ? 2 : (stbP ? 1 : sO);
+        const setsLost = p1wins ? (stbP ? 1 : sO) : 2;
         matches.push({
           p1: p.name, p2: opp.name, winner,
-          sets: `${sP > sO ? 2 : 1}:${sP > sO ? (stbP ? 1 : sO) : 2}`,
+          sets: p1wins ? `${setsWon}:${setsLost}` : `${setsLost}:${setsWon}`,
           sc
         });
       }
 
+      // Stats pro tohoto hráče (p)
       const s = stats[p.name];
       if (sP > sO) s.wins++; else s.losses++;
       s.sW += sP > sO ? 2 : (stbP ? 1 : sP);
       s.sL += sP > sO ? (stbP ? 1 : sO) : 2;
       s.gW += g1w + g2w; s.gL += g1l + g2l;
+
+      // Stats pro soupeře — zrcadlový výsledek (jen jednou, při prvním průchodu)
+      if (pi < oppIdx && stats[opp.name]) {
+        const so = stats[opp.name];
+        if (sP > sO) so.losses++; else so.wins++;
+        so.sW += sP > sO ? (stbP ? 1 : sO) : 2;
+        so.sL += sP > sO ? 2 : (stbP ? 1 : sP);
+        so.gW += g1l + g2l; so.gL += g1w + g2w;
+      }
     });
   });
 
