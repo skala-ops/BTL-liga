@@ -362,6 +362,11 @@ function parseFile(wb) {
   players.forEach((p, pi) => {
     opps.forEach(opp => {
       if (p.name === opp.name) return;
+
+      const oppIdx = pNames.indexOf(opp.name);
+      // Zpracuj každý zápas jen jednou — z řádku hráče s nižším indexem
+      if (pi >= oppIdx && oppIdx >= 0) return;
+
       const c = opp.col, r = p.ri;
       const raw1w = get(r, c), raw1l = get(r, c + 1);
       if (raw1w === null && raw1l === null) return;
@@ -377,39 +382,33 @@ function parseFile(wb) {
         sP += stbP; sO += (1 - stbP);
       }
 
-      const oppIdx = pNames.indexOf(opp.name);
-      if (pi < oppIdx || oppIdx < 0) {
-        const winner = sP > sO ? p.name : opp.name;
-        let sc = `${g1w}:${g1l}`;
-        if (g2w || g2l) sc += ` ${g2w}:${g2l}`;
-        if (sbw || sbl) sc += ` (${sbw}:${sbl})`;
-        // setsLabel vždy z pohledu vítěze (p1 může být poražený)
-        const p1wins = sP > sO;
-        const setsWon = p1wins ? 2 : (stbP ? 1 : sO);
-        const setsLost = p1wins ? (stbP ? 1 : sO) : 2;
-        matches.push({
-          p1: p.name, p2: opp.name, winner,
-          sets: p1wins ? `${setsWon}:${setsLost}` : `${setsLost}:${setsWon}`,
-          sc
-        });
-      }
+      const winner = sP > sO ? p.name : opp.name;
+      let sc = `${g1w}:${g1l}`;
+      if (g2w || g2l) sc += ` ${g2w}:${g2l}`;
+      if (sbw || sbl) sc += ` (${sbw}:${sbl})`;
 
-      // Stats pro tohoto hráče (p)
+      // Zobraz vždy jako vítěz:poražený
+      const [mp1, mp2] = sP > sO ? [p.name, opp.name] : [opp.name, p.name];
+      const [ms1, ms2] = sP > sO ? [sP, sO] : [sO, sP];
+      matches.push({ p1: mp1, p2: mp2, winner, sets: `${ms1}:${ms2}`, sc });
+
+      // Stats pro p (hráče v řádku)
       const s = stats[p.name];
-      if (sP > sO) s.wins++; else s.losses++;
+      if (sP > sO) { s.wins++; } else { s.losses++; }
       s.sW += sP > sO ? 2 : (stbP ? 1 : sP);
       s.sL += sP > sO ? (stbP ? 1 : sO) : 2;
       s.gW += g1w + g2w; s.gL += g1l + g2l;
 
-      // Stats pro soupeře — zrcadlový výsledek (jen jednou, při prvním průchodu)
-      if (pi < oppIdx && stats[opp.name]) {
-        const so = stats[opp.name];
-        if (sP > sO) so.losses++; else so.wins++;
+      // Stats pro soupeře (zrcadlově)
+      const so = stats[opp.name];
+      if (so) {
+        if (sP > sO) { so.losses++; } else { so.wins++; }
         so.sW += sP > sO ? (stbP ? 1 : sO) : 2;
         so.sL += sP > sO ? 2 : (stbP ? 1 : sP);
         so.gW += g1l + g2l; so.gL += g1w + g2w;
       }
     });
+  });
   });
 
   const standings = players
