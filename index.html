@@ -386,15 +386,19 @@ function parseFile(wb) {
         sP += stbP; sO += (1-stbP);
       }
 
-      // p je hráč v řádku, opp je soupeř v záhlaví
-      // gemy jsou z pohledu p: g1w=p vyhrál, g1l=p prohrál
+      // gemy jsou z pohledu p (hráče v řádku): g1w=p vyhrál, g1l=p prohrál
       const winner = sP>sO ? p.name : opp.name;
-      let sc = `${g1w}:${g1l}`;
-      if (g2w||g2l) sc += ` ${g2w}:${g2l}`;
-      if (sbw||sbl) sc += ` (${sbw}:${sbl})`;
+      const pWon = sP > sO;
+      // sc vždy zobraz z pohledu vítěze
+      const [w1,l1] = pWon ? [g1w,g1l] : [g1l,g1w];
+      const [w2,l2] = pWon ? [g2w,g2l] : [g2l,g2w];
+      const [ws,ls] = pWon ? [sbw,sbl] : [sbl,sbw];
+      let sc = `${w1}:${l1}`;
+      if (g2w||g2l) sc += ` ${w2}:${l2}`;
+      if (sbw||sbl) sc += ` (${ws}:${ls})`;
 
-      const [mp1,mp2] = sP>sO ? [p.name,opp.name] : [opp.name,p.name];
-      const [ms1,ms2] = sP>sO ? [sP,sO] : [sO,sP];
+      const [mp1,mp2] = pWon ? [p.name,opp.name] : [opp.name,p.name];
+      const [ms1,ms2] = pWon ? [sP,sO] : [sO,sP];
       matches.push({p1:mp1, p2:mp2, winner, sets:`${ms1}:${ms2}`, sc});
 
       // Stats pro p
