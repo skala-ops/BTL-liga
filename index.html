@@ -293,7 +293,7 @@
       <div class="section-body">
         <table>
           <thead><tr>
-            <th>#</th><th>Hráč</th><th>V</th><th>P</th><th>S+</th><th>S−</th><th>Skóre</th><th>Body</th>
+            <th>#</th><th>Hráč</th><th>Z</th><th>V</th><th>P</th><th>S+</th><th>S−</th><th>Skóre</th><th>Body</th>
           </tr></thead>
           <tbody id="standingsBody"></tbody>
         </table>
@@ -440,14 +440,18 @@ function render(data) {
   const { standings, matches } = data;
 
   // Standings
-  document.getElementById('standingsBody').innerHTML = standings.map((p, i) => {
+  document.getElementById('standingsBody').innerHTML = standings
+    .filter(p => p.name !== 'Ketis')
+    .map((p, i) => {
     const r = i + 1;
     const rc = r === 1 ? 'rank-1' : r === 2 ? 'rank-2' : r === 3 ? 'rank-3' : '';
     const none = !p.wins && !p.losses;
     const d = '<span class="muted">—</span>';
+    const played = p.wins + p.losses;
     return `<tr>
       <td><span class="rank ${rc}">${r}</span></td>
       <td>${p.name}</td>
+      <td style="color:#666">${played}</td>
       <td class="${none ? 'muted' : 'wins'}">${none ? '—' : p.wins}</td>
       <td class="${none ? 'muted' : 'losses'}">${none ? '—' : p.losses}</td>
       <td>${none ? d : p.sW}</td>
