@@ -441,7 +441,7 @@ function render(data) {
 
   // Standings
   document.getElementById('standingsBody').innerHTML = standings
-    .filter(p => p.name !== 'Ketis')
+
     .map((p, i) => {
     const r = i + 1;
     const rc = r === 1 ? 'rank-1' : r === 2 ? 'rank-2' : r === 3 ? 'rank-3' : '';
